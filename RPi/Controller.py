@@ -21,25 +21,21 @@ firebase = pyrebase.initialize_app(config)
 #Get a reference to the database service
 db = firebase.database()
 
-def update_firebase_temperature(temperature, current_time, label):
+def update_firebase_temperature(temperature, DevID, current_time, label):
         if temperature is not None:
                 data = {"label":current_time, "value":temperature}
-                results = db.child("Temperature").child(label).set(data)
-                time.sleep(4)
+                results = db.child("Temperature").child(DevID).child(label).set(data)
         else:
                 print('Failed to get reading. Try Again!')
-                time.sleep(4)
 
-def update_firebase_humidity(humidity, current_time, label):
+def update_firebase_humidity(humidity, DevID, current_time, label):
         if humidity is not None:
                 data = {"label":current_time, "value":humidity}
                 results = db.child("Humidity").child(label).set(data)
-                time.sleep(4)
         else:
                 print('Failed to get reading. Try Again!')
-                time.sleep(4)
 
-def update_firebase_light(light, current_time, label):
+def update_firebase_light(light, DevID, current_time, label):
         if light is not None:
                 data = {"label":current_time, "value":light}
                 results = db.child("Light").child(label).set(data)
@@ -48,7 +44,7 @@ def update_firebase_light(light, current_time, label):
                 print('Failed to get reading. Try Again!')
                 time.sleep(4)
 
-def update_firebase_room_occupancy(room_occupancy, current_time, label):
+def update_firebase_room_occupancy(room_occupancy, DevID, current_time, label):
         if room_occupancy is not None:
                 data = {"label":current_time, "value":room_occupancy}
                 results = db.child("Room_Occupancy").child(label).set(data)
@@ -149,14 +145,38 @@ def read_XBEE():
 	# else:
 	# 	return None
 
+DataTypes = ["TEMP", "HUMI", "LIGH", "ROOM"]
+SampleCounts = {}
+for dt in DataTypes:
+	SampleCounts[dt] = 0
+
 
 # Continuously read and print data
 while True:
 	try:
-
 		Message = read_XBEE()
 		if Message != False:
 			print(Message)
+			current_time = (datetime.now()).strftime("%X,")
+			if Message[1] == "TEMP":
+				print("Temperature case triggered")
+				SampleCounts[Message[1]] += 1
+				update_firebase_temperature(Message[2], Message[0], current_time, SampleCounts[Message[1]])
+			elif Message[1] == "HUMI":
+				SampleCounts[Message[1]] += 1
+				update_firebase_humidity(Message[2], Message[0], current_time, SampleCounts[Message[1]])
+				print("Humidity case triggered")
+			elif Message[1] == "LIGH":
+				print("Light case triggered")
+				SampleCounts[Message[1]] += 1
+				update_firebase_light(Message[2], Message[0], current_time, SampleCounts[Message[1]])
+			elif Message[1] == "ROOM":
+				print("Room Occupancy case triggered")
+				SampleCounts[Message[1]] += 1
+				update_firebase_room_occupancy(Message[2], Message[0], current_time, SampleCounts[Message[1]])
+			else:
+				print("No case was triggered")
+
 		else:
 			print("Invalid input received and dropped")
 	except KeyboardInterrupt:

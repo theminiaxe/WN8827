@@ -29,7 +29,7 @@ void loop() {
   send_data("002", "HUMI", String(humi));
   // XBee.print("002HUMI");
   // XBee.println(dht.readHumidity());
-  delay(5000);
+  delay(60000);
 }
 
 int send_data(String DevID, String DevDataType, String DevData) {
@@ -69,7 +69,7 @@ int send_data(String DevID, String DevDataType, String DevData) {
   if (XBee.available())
     XBee.readString();
   XBee.println(Message);
-  delay(100);
+  delay(1000);
   for (int i = 0; i < 10; i++) {
     if (XBee.available()) {
       String XBeeConfirmation = XBee.readString();
