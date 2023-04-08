@@ -3,33 +3,27 @@
 //SoftwareSerial XBee(1,0); // RX, TX
 SoftwareSerial XBee(2,3); // RX, TX
 
-#include "DHT.h"
-
-#define DHTPIN 7
-#define DHTTYPE DHT11
-
-
 int send_data(String DevID, String DevDataType, String DevData);
-
-DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   XBee.begin(9600);
   Serial.begin(9600);
-  randomSeed(analogRead(5));
-  dht.begin();
+  randomSeed(analogRead(A5));
 }
 
+// the loop routine runs over and over again forever:
 void loop() {
-  float temp = dht.readTemperature(); // read temperature data
-  float humi = dht.readHumidity();
-  // Send data to the coordinator'
-  //Serial.print(temp);
-  send_data("D02", "TEMP", String(temp));
+  int totalSensorValues = 0;
+  int totalReadings = 100;
+  for (int i = 0; i < totalReadings; i++) {
+    totalSensorValues += analogRead(A0);
+    delay(1);  // delay in between reads for stability
+  }
+  int avgSensorValue = totalSensorValues / totalReadings;
+  send_data("D03", "LIGH", String(avgSensorValue));
   delay(100);
-  send_data("D02", "HUMI", String(humi));
-  // XBee.print("002HUMI");
-  // XBee.println(dht.readHumidity());
+  //mimic sending temperature as a second device - don't have another thermistor so will just send const value
+  send_data("D03", "TEMP", "22.0");
   delay(random(10000,60000));
 }
 
