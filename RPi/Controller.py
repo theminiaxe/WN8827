@@ -155,7 +155,7 @@ while True:
 		Message = read_XBEE()
 		if Message != False:
 			current_time = datetime.now()
-			current_time_string = current_time.strftime("%X,")
+			current_time_string = current_time.strftime("%x,%X") 
 			ProcessingRequired = False
 			if (Message[0] + Message[1] in MessageCache.keys()):
 				#Message containing data of same type from save device has been received previously
