@@ -28,7 +28,7 @@
       };
       firebase.initializeApp(config);
       console.log("Firebase initialised");
-      const database = firebase.database().ref("Temperature");
+      const database = firebase.database().ref();
 
 
       // database.on("value", function(snapshot) {
@@ -52,8 +52,7 @@
       function getData(callbackIN) {     
         console.log("Debug - Get Data");  
         database.once("value").then(function (snapshot) {
-          console.log(snapshot.child("D02").val());
-          callbackIN(snapshot.child("D02").val());
+          callbackIN(snapshot.val());
         });
       }
 
@@ -61,215 +60,140 @@
         console.log("Debug - Gen Function");
         console.log(Object.prototype.toString.call(data));
         console.log(data);
-        var cdata = [];
-        for (var i in data) {
-          //document.write(i);
-          console.log("Debug - cdata for loop");
-          cdata.push({
-            label: data[i]["label"],
-            value: data[i]["value"],
-          });
+        //data currently has structure as follows
+        /*
+          - Data Type
+            - Device #
+              - Sample #
+                - Label
+                - Value
+        */
+        //Need to iterate through this list in order to visualise all data
+        for (var dataType in data)
+        {
+          i = 1;
+          //iterate through the data types in the list
+          console.log("Data type - ");
+          console.log(dataType);
+          for (var devID in data[dataType]) {
+            console.log("Device ID - ");
+            console.log(devID);
+            var chartData = [];
+            for (var sample in data[dataType][devID]) {
+              //console.log(data[dataType][devID][sample]["label"]);
+              chartData.push({
+                label: data[dataType][devID][sample]["label"],
+                value: data[dataType][devID][sample]["value"],
+              })
+              //console.log(data[dataType][devID][sample]["value"]);
+            }
+
+            var elemDiv = document.createElement('div');
+            elemDiv.id = dataType + devID
+            elemDiv.innerHTML = `<svg
+        width="90px"
+        height="90px"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid"
+        class="lds-rolling"
+        style="background: none"
+      >
+        <circle
+          cx="50"
+          cy="50"
+          fill="none"
+          ng-attr-stroke="{{config.color}}"
+          ng-attr-stroke-width="{{config.width}}"
+          ng-attr-r="{{config.radius}}"
+          ng-attr-stroke-dasharray="{{config.dasharray}}"
+          stroke="#6ac1a5"
+          stroke-width="9"
+          r="33"
+          stroke-dasharray="155.50883635269477 53.83627878423159"
+          transform="rotate(324 50 50)"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            calcMode="linear"
+            values="0 50 50;360 50 50"
+            keyTimes="0;1"
+            dur="1s"
+            begin="0s"
+            repeatCount="indefinite"
+          ></animateTransform>
+        </circle>
+      </svg>`
+            document.body.appendChild(elemDiv);
+
+            var firebaseChart = new FusionCharts({
+              id: i.toString(),
+              type: "line", // try: "line", "column2d", "area2d"
+              renderAt: dataType + devID,
+              width: "750",
+              height: "400",
+              dataFormat: "json",
+              dataSource: {
+                chart: {
+                  caption: dataType + " - " + devID,
+                  subCaption: "Number of Samples Taken by DreamTeam.",
+                  subCaptionFontBold: "0",
+                  captionFontSize: "20",
+                  subCaptionFontSize: "17",
+                  captionPadding: "15",
+                  captionFontColor: "#8C8C8C",
+                  baseFontSize: "14",
+                  baseFont: "Barlow",
+                  canvasBgAlpha: "0",
+                  bgColor: "#FFFFFF",
+                  bgAlpha: "100",
+                  showBorder: "0",
+                  showCanvasBorder: "0",
+                  showPlotBorder: "0",
+                  showAlternateHGridColor: "0",
+                  usePlotGradientColor: "0",
+                  paletteColors: "#6AC1A5",
+                  showValues: "0",
+                  divLineAlpha: "5",
+                  showAxisLines: "1",
+                  drawAnchors: "0",
+                  xAxisLineColor: "#8C8C8C",
+                  xAxisLineThickness: "0.7",
+                  xAxisLineAlpha: "50",
+                  yAxisLineColor: "#8C8C8C",
+                  yAxisLineThickness: "0.7",
+                  yAxisLineAlpha: "50",
+                  baseFontColor: "#8C8C8C",
+                  toolTipBgColor: "#FA8D67",
+                  toolTipPadding: "10",
+                  toolTipColor: "#FFFFFF",
+                  toolTipBorderRadius: "3",
+                  toolTipBorderAlpha: "0",
+                  drawCrossLine: "1",
+                  crossLineColor: "#8C8C8C",
+                  crossLineAlpha: "60",
+                  crossLineThickness: "0.7",
+                  alignCaptionWithCanvas: "1",
+                  xAxisName: "Time",
+                  yAxisName: "Temperature (C)",
+                  numberprefix: "Temp = ",
+                  labeldisplay: "rotate",
+                  //attributes use to set the yaxis limits
+                  yAxisMinValue: "24",
+                  yAxisMaxValue: "28",
+                },
+                data: chartData,
+              },
+            });
+            firebaseChart.render();
+            i++;
+          }
         }
-
-        var firebaseChart = new FusionCharts({
-          id: "chart1",
-          type: "line", // try: "line", "column2d", "area2d"
-          renderAt: "chart-container",
-          width: "750",
-          height: "400",
-          dataFormat: "json",
-          dataSource: {
-            chart: {
-              caption: "Temperature Values - C1",
-              subCaption: "Number of Samples Taken by DreamTeam.",
-              subCaptionFontBold: "0",
-              captionFontSize: "20",
-              subCaptionFontSize: "17",
-              captionPadding: "15",
-              captionFontColor: "#8C8C8C",
-              baseFontSize: "14",
-              baseFont: "Barlow",
-              canvasBgAlpha: "0",
-              bgColor: "#FFFFFF",
-              bgAlpha: "100",
-              showBorder: "0",
-              showCanvasBorder: "0",
-              showPlotBorder: "0",
-              showAlternateHGridColor: "0",
-              usePlotGradientColor: "0",
-              paletteColors: "#6AC1A5",
-              showValues: "0",
-              divLineAlpha: "5",
-              showAxisLines: "1",
-              drawAnchors: "0",
-              xAxisLineColor: "#8C8C8C",
-              xAxisLineThickness: "0.7",
-              xAxisLineAlpha: "50",
-              yAxisLineColor: "#8C8C8C",
-              yAxisLineThickness: "0.7",
-              yAxisLineAlpha: "50",
-              baseFontColor: "#8C8C8C",
-              toolTipBgColor: "#FA8D67",
-              toolTipPadding: "10",
-              toolTipColor: "#FFFFFF",
-              toolTipBorderRadius: "3",
-              toolTipBorderAlpha: "0",
-              drawCrossLine: "1",
-              crossLineColor: "#8C8C8C",
-              crossLineAlpha: "60",
-              crossLineThickness: "0.7",
-              alignCaptionWithCanvas: "1",
-              xAxisName: "Time",
-              yAxisName: "Temperature (C)",
-              numberprefix: "Temp = ",
-              labeldisplay: "rotate",
-              //attributes use to set the yaxis limits
-              yAxisMinValue: "24",
-              yAxisMaxValue: "28",
-            },
-            data: cdata,
-          },
-        });
-        var firebaseChart2 = new FusionCharts({
-          id: "chart2",
-          type: "line", // try: "line", "column2d", "area2d"
-          renderAt: "chart-container2",
-          width: "750",
-          height: "400",
-          dataFormat: "json",
-          dataSource: {
-            chart: {
-              caption: "Temperature Values - C2",
-              subCaption: "Number of Samples Taken by DreamTeam.",
-              subCaptionFontBold: "0",
-              captionFontSize: "20",
-              subCaptionFontSize: "17",
-              captionPadding: "15",
-              captionFontColor: "#8C8C8C",
-              baseFontSize: "14",
-              baseFont: "Barlow",
-              canvasBgAlpha: "0",
-              bgColor: "#FFFFFF",
-              bgAlpha: "100",
-              showBorder: "0",
-              showCanvasBorder: "0",
-              showPlotBorder: "0",
-              showAlternateHGridColor: "0",
-              usePlotGradientColor: "0",
-              paletteColors: "#6AC1A5",
-              showValues: "0",
-              divLineAlpha: "5",
-              showAxisLines: "1",
-              drawAnchors: "0",
-              xAxisLineColor: "#8C8C8C",
-              xAxisLineThickness: "0.7",
-              xAxisLineAlpha: "50",
-              yAxisLineColor: "#8C8C8C",
-              yAxisLineThickness: "0.7",
-              yAxisLineAlpha: "50",
-              baseFontColor: "#8C8C8C",
-              toolTipBgColor: "#FA8D67",
-              toolTipPadding: "10",
-              toolTipColor: "#FFFFFF",
-              toolTipBorderRadius: "3",
-              toolTipBorderAlpha: "0",
-              drawCrossLine: "1",
-              crossLineColor: "#8C8C8C",
-              crossLineAlpha: "60",
-              crossLineThickness: "0.7",
-              alignCaptionWithCanvas: "1",
-              xAxisName: "Time",
-              yAxisName: "Temperature (C)",
-              numberprefix: "Temp = ",
-              labeldisplay: "rotate",
-              //attributes use to set the yaxis limits
-              yAxisMinValue: "24",
-              yAxisMaxValue: "28",
-            },
-            data: cdata,
-          },
-        });
-        firebaseChart.render();
-
-        firebaseChart2.render();
       }
     </script>
   </head>
 
   <body>
-    <div id="chart-container">
-      <svg
-        width="90px"
-        height="90px"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid"
-        class="lds-rolling"
-        style="background: none"
-      >
-        <circle
-          cx="50"
-          cy="50"
-          fill="none"
-          ng-attr-stroke="{{config.color}}"
-          ng-attr-stroke-width="{{config.width}}"
-          ng-attr-r="{{config.radius}}"
-          ng-attr-stroke-dasharray="{{config.dasharray}}"
-          stroke="#6ac1a5"
-          stroke-width="9"
-          r="33"
-          stroke-dasharray="155.50883635269477 53.83627878423159"
-          transform="rotate(324 50 50)"
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            calcMode="linear"
-            values="0 50 50;360 50 50"
-            keyTimes="0;1"
-            dur="1s"
-            begin="0s"
-            repeatCount="indefinite"
-          ></animateTransform>
-        </circle>
-      </svg>
-    </div>
-    <div id="chart-container2">
-      <svg
-        width="90px"
-        height="90px"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid"
-        class="lds-rolling"
-        style="background: none"
-      >
-        <circle
-          cx="50"
-          cy="50"
-          fill="none"
-          ng-attr-stroke="{{config.color}}"
-          ng-attr-stroke-width="{{config.width}}"
-          ng-attr-r="{{config.radius}}"
-          ng-attr-stroke-dasharray="{{config.dasharray}}"
-          stroke="#6ac1a5"
-          stroke-width="9"
-          r="33"
-          stroke-dasharray="155.50883635269477 53.83627878423159"
-          transform="rotate(324 50 50)"
-        >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            calcMode="linear"
-            values="0 50 50;360 50 50"
-            keyTimes="0;1"
-            dur="1s"
-            begin="0s"
-            repeatCount="indefinite"
-          ></animateTransform>
-        </circle>
-      </svg>
-    </div>
   </body>
 </html>
