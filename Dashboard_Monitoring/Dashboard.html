@@ -40,7 +40,18 @@
       // });
     </script>
 
-    <script>   
+    <script>  
+      var y_label = {
+        Temperature: "Temperature (C)",
+        Light: "Light",
+        Humidity: "Humidity (%)"
+      } 
+
+      var num_prefix = {
+        Temperature: "Temp = ",
+        Light: "Light = ",
+        Humidity: "Humi = "
+      }
       console.log("Debug - database.on");
       database.on('child_changed', function(snapshot){
         getData(genFunction);
@@ -90,7 +101,8 @@
 
             var elemDiv = document.createElement('div');
             elemDiv.id = dataType + devID
-            elemDiv.innerHTML = `<svg
+            elemDiv.innerHTML = `
+      <svg
         width="90px"
         height="90px"
         xmlns="http://www.w3.org/2000/svg"
@@ -128,7 +140,7 @@
             document.body.appendChild(elemDiv);
 
             var firebaseChart = new FusionCharts({
-              id: i.toString(),
+              id: (dataType + devID) + "ID",
               type: "line", // try: "line", "column2d", "area2d"
               renderAt: dataType + devID,
               width: "750",
@@ -176,8 +188,8 @@
                   crossLineThickness: "0.7",
                   alignCaptionWithCanvas: "1",
                   xAxisName: "Time",
-                  yAxisName: "Temperature (C)",
-                  numberprefix: "Temp = ",
+                  yAxisName: y_label[dataType],
+                  numberprefix: num_prefix[dataType],
                   labeldisplay: "rotate",
                   //attributes use to set the yaxis limits
                   yAxisMinValue: "24",
