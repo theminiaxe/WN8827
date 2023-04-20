@@ -28,7 +28,7 @@ void loop() {
     delay(1);  // delay in between reads for stability
   }
   int avgSensorValue = totalSensorValues / totalReadings;
-  float sentTime = millis();
+  
   send_data("D03", "LIGH", String(avgSensorValue));
   delay(100);
   //mimic sending temperature as a second device - don't have another thermistor so will just send const value
@@ -41,6 +41,7 @@ void loop() {
       send_data(DeviceID, "ROOM", String(PIRSTATE));
       Serial.println("PIR Triggered " + String(PIRSTATE));
     }
+    float sentTime = millis();
   while (millis() - sentTime < 10000)
   {
     receive_data("NONE");
@@ -51,64 +52,79 @@ void loop() {
 
 int receive_data(String MessageToConfirm)
 {
+//flag to confirm whether or not a confirmation of receipt has been received by the arduino
   int MessageConfirmed = 0;
+//flag indicating that there might be multiple messages waiting to be processed
   int MultipleMessageFlag = 1;
   if (XBee.available()) // If data comes in from XBee, we process the data
   {
-    String rawRead = XBee.readString(); // read message from XCTU
-    if (rawRead.length() > 3){
+    String rawRead = XBee.readString(); // read the entirety of the available data from the XBee to a String for processing
+    if (rawRead.length() > 3){ //check required to confirm that data is a reasonable length for processing, where data is less than three, for loop will effectively break.
+      //iterate through the entirety of the received data, checking to see whether it might contain messaged destined for this device
+      //if it's detected that there aren't multiple messages, will stop once there are no longer multiple messages to search
       for (int i = 0; i < rawRead.length() -3 && rawRead.length() > 3 && MultipleMessageFlag == 1; i++)
       {      
         //indicates a message has been found addressed to this device. More than this single message may have been buffered on serial port, so further interrogationr required
         if (rawRead.substring(i, i+3) == DeviceID)
         {
+          //Declare a temporary variable to contain the data to be processed, not just the entire string
           String dataToProcess = "";  
-          //Skip past device ID and Data ID, and look for a 'D' indicating that more than one message has been buffered    
+          //Serial.println("Debug - " + rawRead);
+          //An integer used to index the potential start of the next available message    
           int nextD = 0;
+          //Skip past device ID and Data ID, and look for a 'D' indicating that more than one message has been buffered
           for (int k = i+7; k < rawRead.length(); k++)
           {
+            //Serial.println("Looking for additional messages");
+            //indicates that there is another message after this one
             if (rawRead[k] == 'D')
             {
               Serial.println("D found");
               nextD = k;
               break;
             }
-            else if (rawRead[k] == '\r')
-            {
-              Serial.println("Carriage return found");
-              nextD = k;
-              break;
-            }
-            else if (rawRead[k] == '\n')
-            {
-              Serial.println("New line found");
-              nextD = k-2;
-              break;
-            }
-            Serial.print(k);
+            //\r follows a valid message
+            // else if (rawRead[k] == '\r')
+            // {
+            //   Serial.println("Carriage return found");
+            //   nextD = k;
+            //   break;
+            // }
+            // //\n follows a \r, not expecting this to ever be triggered, but is here to catch in the event of a malformed message
+            // else if (rawRead[k] == '\n')
+            // {
+            //   Serial.println("New line found");
+            //   nextD = k-2;
+            //   break;
+            // }
+            //Serial.print(k); //Debug
           }
-          //indicates there may be a message, and that rawRead should be broken up
+          //indicates that there may have been multiple messaged buffered by the XBee
+          //store the 'first message' in the temporary variable, then remove it from the bufferred string to avoid repeatedly processing
           if (nextD != 0)
           {
-            dataToProcess = rawRead.substring(i,nextD);
+            dataToProcess = rawRead.substring(i,nextD-2);
             rawRead = rawRead.substring(nextD, rawRead.length());
             Serial.println("Data to Process " + dataToProcess);
             Serial.println("New raw read " + rawRead);
-            i = 0;
+            i = -1;
           }
+          //indicates that only one message was buffered, and as such no further processing is required.
+          //for simplicity of later code, the string is read into the temporary variable so that only that variable
+          //needs to be passed on to later functions
           else
           {
-            dataToProcess = rawRead.substring(i,rawRead.length()-2);
+            dataToProcess = rawRead.substring(i,rawRead.length());
+            if (dataToProcess[(dataToProcess.length())-2] == '\r')
+            {
+              dataToProcess = dataToProcess.substring(0,dataToProcess.length()-2);
+            }
             MultipleMessageFlag = 0;
             Serial.println("Existing raw read " + rawRead);
-            i = 0;
+            i = -1;
           }
-          if (MessageToConfirm == "NONE")
-          {
-            Serial.println("No message to confirm - data will instead be sent to a relevant processing function");
-            process_data(dataToProcess);
-          }
-          else if (MessageToConfirm == dataToProcess)
+          //the device has received a message confirming receipt of a previously sent data
+          if (MessageToConfirm == dataToProcess)
           {
             Serial.println("Message confirmed");
             MessageToConfirm = "NONE";
@@ -116,13 +132,14 @@ int receive_data(String MessageToConfirm)
           }
           else 
           {
-            Serial.println("To compare" + MessageToConfirm + " with " + dataToProcess);
+            Serial.println("Processing data");
+            process_data(dataToProcess);
           }
 
         }
         else {
-          Serial.println(rawRead.substring(i, i+3));
-          Serial.println(rawRead.length());
+          //Serial.println("Debugging rawRead update " +  rawRead.substring(i, i+3));
+          //Serial.println(rawRead.length());
         }
       }
     }

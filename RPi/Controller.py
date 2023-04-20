@@ -174,17 +174,19 @@ while True:
 			else:
 				print("Debug - not in message cache", Message)
 				ProcessingRequired = True
-			
+			MessageCache[Message[0] + Message[1]] = current_time
+			print(MessageCache[Message[0] + Message[1]])
+			print(Message)
 			if ProcessingRequired:
 				if Message[1] == "TEMP":
 					print("Temperature case triggered")
 					SampleCounts[Message[1]] += 1
 					update_firebase_temperature(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
 					if float(Message[2]) > desiredTemp:
-						ser.write((Message[0]+Message[1]+"H"+"\\r\\n").encode())
+						ser.write((Message[0]+Message[1]+"H").encode())
 						print((Message[0]+Message[1]+"H"))
 					else:
-						print(ser.write((Message[0]+Message[1]+"L" +'\\r\\n').encode()))
+						print(ser.write((Message[0]+Message[1]+"L").encode()))
 				elif Message[1] == "HUMI":
 					SampleCounts[Message[1]] += 1
 					update_firebase_humidity(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
@@ -207,13 +209,12 @@ while True:
 						SampleCounts[Message[1]] += 1
 						update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
 						if roomState == "0":
-							ser.write(("D01ROOM0\\r\\n").encode())
+							ser.write(("D01ROOM0").encode())
 						else:
-							ser.write(("D01ROOM1\\r\\n").encode())
+							ser.write(("D01ROOM1").encode())
 				else:
 					print("No case was triggered")
-				print(Message)
-				MessageCache[Message[0] + Message[1]] = current_time
+				
 			else:
 				print("Debug - Not processing the following as it is expected to be an unnecessary retransmit", Message)
 		else:
