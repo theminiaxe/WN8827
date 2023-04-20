@@ -3,9 +3,17 @@
 //SoftwareSerial XBee(1,0); // RX, TX
 SoftwareSerial XBee(2,3); // RX, TX
 
+int PIRPIN = 7;
+int PIRSTATE = LOW;
+
 int send_data(String DevID, String DevDataType, String DevData);
+void process_data(String Data);
+int receive_data(String MessageToConfirm="NONE");
+
+String DeviceID = "D03";
 
 void setup() {
+  pinMode(PIRPIN, INPUT);
   XBee.begin(9600);
   Serial.begin(9600);
   randomSeed(analogRead(A5));
@@ -20,11 +28,106 @@ void loop() {
     delay(1);  // delay in between reads for stability
   }
   int avgSensorValue = totalSensorValues / totalReadings;
+  float sentTime = millis();
   send_data("D03", "LIGH", String(avgSensorValue));
   delay(100);
   //mimic sending temperature as a second device - don't have another thermistor so will just send const value
   send_data("D03", "TEMP", "22.0");
-  delay(random(10000,60000));
+    int pirVal = digitalRead(PIRPIN);
+    Serial.println("****************************");
+    if (pirVal != PIRSTATE)
+    {
+      PIRSTATE = pirVal;
+      send_data(DeviceID, "ROOM", String(PIRSTATE));
+      Serial.println("PIR Triggered " + String(PIRSTATE));
+    }
+  while (millis() - sentTime < 10000)
+  {
+    receive_data("NONE");
+
+  }
+  Serial.println("****************************");
+}
+
+int receive_data(String MessageToConfirm)
+{
+  int MessageConfirmed = 0;
+  int MultipleMessageFlag = 1;
+  if (XBee.available()) // If data comes in from XBee, we process the data
+  {
+    String rawRead = XBee.readString(); // read message from XCTU
+    if (rawRead.length() > 3){
+      for (int i = 0; i < rawRead.length() -3 && rawRead.length() > 3 && MultipleMessageFlag == 1; i++)
+      {      
+        //indicates a message has been found addressed to this device. More than this single message may have been buffered on serial port, so further interrogationr required
+        if (rawRead.substring(i, i+3) == DeviceID)
+        {
+          String dataToProcess = "";  
+          //Skip past device ID and Data ID, and look for a 'D' indicating that more than one message has been buffered    
+          int nextD = 0;
+          for (int k = i+7; k < rawRead.length(); k++)
+          {
+            if (rawRead[k] == 'D')
+            {
+              Serial.println("D found");
+              nextD = k;
+              break;
+            }
+            else if (rawRead[k] == '\r')
+            {
+              Serial.println("Carriage return found");
+              nextD = k;
+              break;
+            }
+            else if (rawRead[k] == '\n')
+            {
+              Serial.println("New line found");
+              nextD = k-2;
+              break;
+            }
+            Serial.print(k);
+          }
+          //indicates there may be a message, and that rawRead should be broken up
+          if (nextD != 0)
+          {
+            dataToProcess = rawRead.substring(i,nextD);
+            rawRead = rawRead.substring(nextD, rawRead.length());
+            Serial.println("Data to Process " + dataToProcess);
+            Serial.println("New raw read " + rawRead);
+            i = 0;
+          }
+          else
+          {
+            dataToProcess = rawRead.substring(i,rawRead.length()-2);
+            MultipleMessageFlag = 0;
+            Serial.println("Existing raw read " + rawRead);
+            i = 0;
+          }
+          if (MessageToConfirm == "NONE")
+          {
+            Serial.println("No message to confirm - data will instead be sent to a relevant processing function");
+            process_data(dataToProcess);
+          }
+          else if (MessageToConfirm == dataToProcess)
+          {
+            Serial.println("Message confirmed");
+            MessageToConfirm = "NONE";
+            MessageConfirmed = 1;
+          }
+          else 
+          {
+            Serial.println("To compare" + MessageToConfirm + " with " + dataToProcess);
+          }
+
+        }
+        else {
+          Serial.println(rawRead.substring(i, i+3));
+          Serial.println(rawRead.length());
+        }
+      }
+    }
+  }
+  return MessageConfirmed;
 }
 
 int send_data(String DevID, String DevDataType, String DevData) {
@@ -62,29 +165,43 @@ int send_data(String DevID, String DevDataType, String DevData) {
     }
   }
   String Message = DevID + DevDataType + DevData;
-  if (XBee.available())
-    XBee.readString();
-  XBee.println(Message);
-  delay(150);
-  for (int i = 0; i < 10; i++) {
-    if (XBee.available()) {
-      String XBeeConfirmation = XBee.readString();
-      Serial.println(XBeeConfirmation.length()); 
-      Serial.println(XBeeConfirmation);  
-      if (XBeeConfirmation == Message)
-      {
-        //Serial.println("Confirmed");
-        return 0;
-      }
+  int timeOutAttempts = 100;
+  int MsgConfirmation = 0;
+  for (int i = 0; i < 5 &&  !MsgConfirmation; i++)
+  {
+    XBee.println(Message);
+    while (!MsgConfirmation && timeOutAttempts>0)
+    {
+      MsgConfirmation = receive_data(Message);
+      timeOutAttempts--;
+      delay(100);
+      //Do nothing, we want confirmation that the previous message has been received, and don't want to perform any action until that time.
     }
-    Serial.print("No message available in response to - ");
-    Serial.println(Message);
-        //Serial.println(Message);
-        delay(random(150,500));
-        XBee.readString();
-        XBee.println(Message);
-        delay(150);
   }
-  Serial.println("No confirmation of transmission was received");
+  if (!MsgConfirmation)
+  {
+      Serial.println("No confirmation of transmission was received");
+  }
   return 1;
+}
+
+void process_data(String Data) {
+  /*if (Data.substring(3,7) == "TEMP")
+  {
+    Serial.println("Processing data related to temp");
+    if (Data[7] == 'H')
+    {
+      Serial.println("H - turning on");
+      digitalWrite(LEDPIN, HIGH);
+    }
+    else if (Data[7] == "L")
+    {
+      Serial.println("L - turning off");
+      digitalWrite(LEDPIN, LOW);
+    }
+  }  
+  else
+  {
+    Serial.println(Data.substring(3,7) + " did not match a condition");
+  }*/
 }

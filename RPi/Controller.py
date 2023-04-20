@@ -28,6 +28,13 @@ def update_firebase_temperature(temperature, DevID, current_time, label):
         else:
                 print('Failed to get reading. Try Again!')
 
+def update_firebase_temperature_control(temperature, DevID, current_time, label):
+        if temperature is not None:
+                data = {"label":current_time, "value":temperature}
+                results = db.child("TemperatureControl").child(DevID).child(label).set(data)
+        else:
+                print('Failed to get reading. Try Again!')
+
 def update_firebase_humidity(humidity, DevID, current_time, label):
         if humidity is not None:
                 data = {"label":current_time, "value":humidity}
@@ -101,7 +108,7 @@ def read_XBEE():
 		#print("Debug - Device ID: ", DevID.group(0))
 		#print("Debug - Device Data Type: ", DevDataType.group(0))
 		#print("Debug - Device Data: ", DevData.group(0))
-		string_encode = (DevID.group(0) + DevDataType.group(0) + DevData.group(0)).encode('utf-8')
+		string_encode = (DevID.group(0) + DevDataType.group(0) + DevData.group(0) + '\r\n').encode('utf-8')
 		print(ser.write(string_encode), " - ", datetime.now()) #send data to Arduino
 		#print("Debug - Confirmation sent", datetime.now())
 		return DevID.group(0), DevDataType.group(0), DevData.group(0)
@@ -143,11 +150,14 @@ def read_XBEE():
 	# else:
 	# 	return None
 
-DataTypes = ["TEMP", "HUMI", "LIGH", "ROOM"]
+DataTypes = ["TEMP", "HUMI", "LIGH", "ROOM", "TECO"]
 SampleCounts = {}
 for dt in DataTypes:
 	SampleCounts[dt] = 0
 MessageCache = {}
+
+desiredTemp = 20
+roomState = "0"
 
 # Continuously read and print data
 while True:
@@ -170,6 +180,11 @@ while True:
 					print("Temperature case triggered")
 					SampleCounts[Message[1]] += 1
 					update_firebase_temperature(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+					if float(Message[2]) > desiredTemp:
+						ser.write((Message[0]+Message[1]+"H"+"\\r\\n").encode())
+						print((Message[0]+Message[1]+"H"))
+					else:
+						print(ser.write((Message[0]+Message[1]+"L" +'\\r\\n').encode()))
 				elif Message[1] == "HUMI":
 					SampleCounts[Message[1]] += 1
 					update_firebase_humidity(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
@@ -178,10 +193,23 @@ while True:
 					print("Light case triggered")
 					SampleCounts[Message[1]] += 1
 					update_firebase_light(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+				elif Message[1] == "TECO":
+					print("Temperature control case triggered")
+					update_firebase_temperature_control(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+					desiredTemp = float(Message[2])
+					SampleCounts[Message[1]] += 1
 				elif Message[1] == "ROOM":
 					print("Room Occupancy case triggered")
-					SampleCounts[Message[1]] += 1
-					update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+					#double check to see if state has actually changed
+					if Message[2] != roomState:
+						print("Room occupancy changed")
+						roomState = Message[2]
+						SampleCounts[Message[1]] += 1
+						update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+						if roomState == "0":
+							ser.write(("D01ROOM0\\r\\n").encode())
+						else:
+							ser.write(("D01ROOM1\\r\\n").encode())
 				else:
 					print("No case was triggered")
 				print(Message)
