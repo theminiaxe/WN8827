@@ -7,6 +7,7 @@ SoftwareSerial XBee(2,3); // RX, TX
 
 #define DHTPIN 7
 #define DHTTYPE DHT11
+#define DEBUG 1
 
 
 int send_data(String DevID, String DevDataType, String DevData);
@@ -15,7 +16,9 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   XBee.begin(9600);
-  Serial.begin(9600);
+  if (DEBUG) {
+    Serial.begin(9600);    
+  }
   randomSeed(analogRead(5));
   dht.begin();
 }
