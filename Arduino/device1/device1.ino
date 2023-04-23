@@ -9,7 +9,7 @@ SoftwareSerial XBee(2,3); // RX, TX
 #define DHTTYPE DHT11
 
 #define LEDPIN 8
-#define ROOMLEDPIN 9
+#define ROOMLEDPIN 13
 #define POTPIN 14
 //Define a flag to be used to indicate whether code is being debugged
 //this will be used largely to determine whether or not to print data

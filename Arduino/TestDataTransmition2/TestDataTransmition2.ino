@@ -40,19 +40,19 @@ void loop() {
   delay(100);
   //mimic sending temperature as a second device - don't have another thermistor so will just send const value
   send_data("D03", "TEMP", "22.0");
-    int pirVal = digitalRead(PIRPIN);
+    
     Serial.println("****************************");
+    float sentTime = millis();
+  while (millis() - sentTime < 10000)
+  {
+    receive_data("NONE");
+    int pirVal = digitalRead(PIRPIN);
     if (pirVal != PIRSTATE)
     {
       PIRSTATE = pirVal;
       send_data(DeviceID, "ROOM", String(PIRSTATE));
       Serial.println("PIR Triggered " + String(PIRSTATE));
     }
-    float sentTime = millis();
-  while (millis() - sentTime < 10000)
-  {
-    receive_data("NONE");
-
   }
   Serial.println("****************************");
 }
