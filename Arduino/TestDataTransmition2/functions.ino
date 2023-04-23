@@ -12,6 +12,7 @@ int receive_data(String MessageToConfirm) {
       for (int i = 0; i < rawRead.length() -3 && rawRead.length() > 3 && MultipleMessageFlag == 1; i++)
       {      
         //indicates a message has been found addressed to this device. More than this single message may have been buffered on serial port, so further interrogationr required
+        SerialPrint(rawRead, DEBUG);
         if (rawRead.substring(i, i+3) == DeviceID)
         {
           //Declare a temporary variable to contain the data to be processed, not just the entire string
@@ -35,7 +36,7 @@ int receive_data(String MessageToConfirm) {
           //store the 'first message' in the temporary variable, then remove it from the bufferred string to avoid repeatedly processing
           if (nextD != 0)
           {
-            dataToProcess = rawRead.substring(i,nextD-2);
+            dataToProcess = rawRead.substring(i,nextD);
             rawRead = rawRead.substring(nextD, rawRead.length());
             Serial.println("Data to Process " + dataToProcess);
             Serial.println("New raw read " + rawRead);
@@ -50,6 +51,7 @@ int receive_data(String MessageToConfirm) {
             if (dataToProcess[(dataToProcess.length())-2] == '\r')
             {
               dataToProcess = dataToProcess.substring(0,dataToProcess.length()-2);
+
             }
             MultipleMessageFlag = 0;
             SerialPrint("Existing raw read " + rawRead,DEBUG);
@@ -168,7 +170,7 @@ void process_data(String Data) {
   }  
   else
   {
-    SerialPrint((Data.substring(3,8) + "From " + Data +"  did not match a condition"), DEBUG);
+    SerialPrint((Data.substring(3,8) + "From " + Data +"  did not match a condition ------------------------------------------------------------------------------------------------------------------------"), DEBUG);
   }
 }
 

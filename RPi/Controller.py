@@ -108,7 +108,7 @@ def read_XBEE():
 		#print("Debug - Device ID: ", DevID.group(0))
 		#print("Debug - Device Data Type: ", DevDataType.group(0))
 		#print("Debug - Device Data: ", DevData.group(0))
-		string_encode = (DevID.group(0) + DevDataType.group(0) + DevData.group(0) + '\r\n').encode('utf-8')
+		string_encode = (DevID.group(0) + DevDataType.group(0) + DevData.group(0)).encode('utf-8')
 		print(ser.write(string_encode), " - ", datetime.now()) #send data to Arduino
 		#print("Debug - Confirmation sent", datetime.now())
 		return DevID.group(0), DevDataType.group(0), DevData.group(0)
