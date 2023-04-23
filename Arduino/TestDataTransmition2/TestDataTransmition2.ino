@@ -6,8 +6,7 @@ SoftwareSerial XBee(2,3); // RX, TX
 String DeviceID = "D03";
 #define DEBUG 1
 
-int PIRPIN = 7;
-int PIRSTATE = LOW;
+#define PIRPIN 7
 
 #define LEDPIN 8
 #define ROOMLEDPIN 9
@@ -37,22 +36,16 @@ void loop() {
   int avgSensorValue = totalSensorValues / totalReadings;
   
   send_data("D03", "LIGH", String(avgSensorValue));
-  delay(100);
   //mimic sending temperature as a second device - don't have another thermistor so will just send const value
   send_data("D03", "TEMP", "22.0");
+  int pirVal = digitalRead(PIRPIN);
+  send_data(DeviceID, "ROOM", String(pirVal));
     
-    Serial.println("****************************");
+    SerialPrint("****************************", DEBUG);
     float sentTime = millis();
   while (millis() - sentTime < 10000)
   {
     receive_data("NONE");
-    int pirVal = digitalRead(PIRPIN);
-    if (pirVal != PIRSTATE)
-    {
-      PIRSTATE = pirVal;
-      send_data(DeviceID, "ROOM", String(PIRSTATE));
-      Serial.println("PIR Triggered " + String(PIRSTATE));
-    }
   }
-  Serial.println("****************************");
+  SerialPrint("****************************", DEBUG);
 }
