@@ -5,11 +5,12 @@ SoftwareSerial XBee(2,3); // RX, TX
 
 #include "DHT.h"
 
-#define DHTPIN 7
+#define DHTPIN 4
 #define DHTTYPE DHT11
 
-#define LEDPIN 8
-#define ROOMLEDPIN 13
+
+#define ROOMLEDPIN 16
+#define LEDPIN 15
 #define POTPIN 14
 //Define a flag to be used to indicate whether code is being debugged
 //this will be used largely to determine whether or not to print data
@@ -39,6 +40,7 @@ void setup() {
     Serial.begin(9600);
   }
   pinMode(LEDPIN, OUTPUT);
+  pinMode(ROOMLEDPIN, OUTPUT);
   randomSeed(analogRead(5));
   dht.begin();
 }

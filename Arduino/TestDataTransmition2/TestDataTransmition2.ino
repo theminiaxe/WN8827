@@ -3,7 +3,7 @@
 //SoftwareSerial XBee(1,0); // RX, TX
 SoftwareSerial XBee(2,3); // RX, TX
 
-String DeviceID = "D03";
+String DeviceID = "D02";
 #define DEBUG 1
 
 #define PIRPIN 7
@@ -35,9 +35,9 @@ void loop() {
   }
   int avgSensorValue = totalSensorValues / totalReadings;
   
-  send_data("D03", "LIGH", String(avgSensorValue));
+  send_data(DeviceID, "LIGH", String(avgSensorValue));
   //mimic sending temperature as a second device - don't have another thermistor so will just send const value
-  send_data("D03", "TEMP", "22.0");
+  send_data(DeviceID, "TEMP", "22.0");
   int pirVal = digitalRead(PIRPIN);
   send_data(DeviceID, "ROOM", String(pirVal));
     
