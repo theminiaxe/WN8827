@@ -56,6 +56,13 @@ def update_firebase_room_occupancy(room_occupancy, DevID, current_time, label):
         else:
                 print('Failed to get reading. Try Again!')
 
+def update_firebase_keypad_lock_status(keypad_lock_status, DevID, current_time, label):
+        if keypad_lock_status is not None:
+                data = {"label":current_time, "value":keypad_lock_status}
+                results = db.child("Lock_Status").child(DevID).child(label).set(data)
+        else:
+                print('Failed to get reading. Try Again!')
+
 # PSEUDOCODE
 #  -  Read input from XBEE using the pyserial library, one byte at a time to enable easier input validation
 #  -  validate the input based on the expected sensors and format of messages being received
@@ -150,14 +157,15 @@ def read_XBEE():
 	# else:
 	# 	return None
 
-DataTypes = ["TEMP", "HUMI", "LIGH", "ROOM", "TECO"]
+DataTypes = ["TEMP", "HUMI", "LIGH", "ROOM", "TECO", "KEYP"]
 SampleCounts = {}
 for dt in DataTypes:
 	SampleCounts[dt] = 0
 MessageCache = {}
 
 desiredTemp = 20
-roomState = "0"
+roomState = "0" #Default is empty - room unoccupied
+lockState = "0" #Default is unlocked - i.e. people in the house
 
 # Continuously read and print data
 while True:
@@ -182,7 +190,7 @@ while True:
 					print("Temperature case triggered")
 					SampleCounts[Message[1]] += 1
 					update_firebase_temperature(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
-					if float(Message[2]) > desiredTemp:
+					if float(Message[2]) > desiredTemp and lockState == "0": #Indicates the house is unlocked, and temp needs to cool down
 						ser.write((Message[0]+Message[1]+"H").encode())
 						print((Message[0]+Message[1]+"H"))
 					else:
@@ -206,12 +214,24 @@ while True:
 					if Message[2] != roomState:
 						print("Room occupancy changed")
 						roomState = Message[2]
-						SampleCounts[Message[1]] += 1
-						update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
-						if roomState == "0":
-							ser.write(("D01ROOM0").encode())
-						else:
-							ser.write(("D01ROOM1").encode())
+						if lockState == "0": #House unlocked, we expect people - turn on light
+							if roomState == "0":
+								ser.write(("D01ROOM0").encode())
+							elif roomState == "1" and lockState == "0": #house
+								ser.write(("D01ROOM1").encode())
+						elif lockState == "1": #House locked - motion detected but we don't necessarily want to turn light on
+							print("Motion detected but house locked - doing nothing") #Might like to look into sending push notifications to phone here
+					SampleCounts[Message[1]] += 1
+					update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+				elif Message[1] == "KEYP":
+					print("Lock status case triggered")
+					if Message[2] == "1": #Lock pin has been input
+						ser.write(("D01ROOM0").encode())
+						ser.write(("D01TEMPH").encode())
+					update_firebase_keypad_lock_status(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+					lockState = Message[2]
+
+
 				else:
 					print("No case was triggered")
 				

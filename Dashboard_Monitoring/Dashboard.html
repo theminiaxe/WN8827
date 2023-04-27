@@ -4,10 +4,23 @@
     <title>Real Time Sensor Data</title>
 
     <style>
-      <!-- CSS Style -- > body {
-        text-align: center;
-      }
+
+
+        <!-- CSS Style -- > body {
+            text-align: center;
+        }
     </style>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" / >
+    <link rel="stylesheet" type="text/css" href="StyleSheet1.css"/ >
+    <!-- Bootstraap -->
+    <link rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous" / >
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+    crossorigin="anonymous" > </script >
+
 
     <!-- including FusionCharts core package JS files -->
     <script src="https://static.fusioncharts.com/code/latest/fusioncharts.js"></script>
@@ -44,13 +57,15 @@
       var y_label = {
         Temperature: "Temperature (C)",
         Light: "Light",
-        Humidity: "Humidity (%)"
+        Humidity: "Humidity (%)",
+        Room_Occupancy: "Room Occupied"
       } 
 
       var num_prefix = {
         Temperature: "Temp = ",
         Light: "Light = ",
-        Humidity: "Humi = "
+        Humidity: "Humi = ",
+        Room_Occupancy: "Status = "
       }
       console.log("Debug - database.on");
       database.on('child_changed', function(snapshot){
@@ -86,58 +101,127 @@
           //iterate through the data types in the list
           console.log("Data type - ");
           console.log(dataType);
-          for (var devID in data[dataType]) {
-            console.log("Device ID - ");
-            console.log(devID);
-            var chartData = [];
-            for (var sample in data[dataType][devID]) {
-              //console.log(data[dataType][devID][sample]["label"]);
-              chartData.push({
-                label: data[dataType][devID][sample]["label"],
-                value: data[dataType][devID][sample]["value"],
-              })
-              //console.log(data[dataType][devID][sample]["value"]);
-            }
+            for (var devID in data[dataType]) {
+                console.log("Device ID - ");
+                console.log(devID);
+                var chartData = [];
+                var numbericData = [];
+                var sumData = [];
+                var prevState = 0;
+                //previousTimeStateChanged
+                var prevTime = 0;
+                //last time data was received
+                var lastTime = 0;
+                var totalTime = 0;
+                var totalTimeGranular = 0;
+                for (var sample in data[dataType][devID]) {
+                    //console.log(data[dataType][devID][sample]["label"]);
+                    chartData.push({
+                        label: data[dataType][devID][sample]["label"],
+                        value: data[dataType][devID][sample]["value"],
+                    })
+                    state = parseFloat(data[dataType][devID][sample]["value"])
+                    time = Date.parse(data[dataType][devID][sample]["label"])
+                    if (prevTime == 0) {
+                        console.log("Setting initial time");
+                        prevTime = time;
+                        console.log(prevTime);
+                    }
+                    //sample to generate statistics for usage
+                    if (dataType == "Room_Occupancy") {
+                        console.log("Room");
+                        console.log(state);
+                        if (state != prevState) {
+                            console.log("State changed");
+                            console.log(state == 0);
+                            if (state == 0) {//light on
+                                console.log("State change detected");
+                                totalTime = totalTime + time - prevTime;
+                                console.log(totalTime);
+                            }
+                            prevState = state;
+                            prevTime = time;
+                        }
+                        //generate a usage graph indicating summation of on time
+                        //indicates on or has been on, and time needs to be added to graph
+                        if (prevState == 1 || state == 1) {
+                          if (lastTime == 0)
+                          {
+                            lastTime = time;
+                          }
+                          totalTimeGranular = totalTimeGranular + time - lastTime;
+                          
+                          console.log("lastTime " + lastTime)
+                        }
+                        sumData.push({
+                            label: data[dataType][devID][sample]["label"],
+                            value: totalTimeGranular/1000 / 60*0.002,
+                          })
+                          lastTime = time;
+                        //console.log(time);
 
+                        //console.log(data[dataType][devID][sample]["value"]);
+                    }
+                    numbericData.push(parseFloat(data[dataType][devID][sample]["value"]));
+                }
+
+
+                totalTime = totalTime / 1000;
+                var cost = totalTime / 60 * 0.002
+                var maxVal = Math.max(...numbericData);
+                var minVal = Math.min(...numbericData);
+             var elemP = document.createElement('p');
+                if (dataType == "Room_Occupancy") {
+                    elemP.innerHTML = "Total Time: " + totalTime + ", Total Cost: $" + cost + "</p>"
+                } else {
+                    elemP.innerHTML = "<p>Max: " + maxVal + ", Min: " + minVal
+                }
+
+            document.body.appendChild(elemP);
             var elemDiv = document.createElement('div');
             elemDiv.id = dataType + devID
+            elemDiv.className = "row"
             elemDiv.innerHTML = `
-      <svg
-        width="90px"
-        height="90px"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid"
-        class="lds-rolling"
-        style="background: none"
-      >
-        <circle
-          cx="50"
-          cy="50"
-          fill="none"
-          ng-attr-stroke="{{config.color}}"
-          ng-attr-stroke-width="{{config.width}}"
-          ng-attr-r="{{config.radius}}"
-          ng-attr-stroke-dasharray="{{config.dasharray}}"
-          stroke="#6ac1a5"
-          stroke-width="9"
-          r="33"
-          stroke-dasharray="155.50883635269477 53.83627878423159"
-          transform="rotate(324 50 50)"
+
+        <svg
+          width="90px"
+          height="90px"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="xMidYMid"
+          class="lds-rolling row"
+          style="background: none"
         >
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            calcMode="linear"
-            values="0 50 50;360 50 50"
-            keyTimes="0;1"
-            dur="1s"
-            begin="0s"
-            repeatCount="indefinite"
-          ></animateTransform>
-        </circle>
-      </svg>`
-            document.body.appendChild(elemDiv);
+          <circle
+            cx="50"
+            cy="50"
+            fill="none"
+            ng-attr-stroke="{{config.color}}"
+            ng-attr-stroke-width="{{config.width}}"
+            ng-attr-r="{{config.radius}}"
+            ng-attr-stroke-dasharray="{{config.dasharray}}"
+            stroke="#6ac1a5"
+            stroke-width="9"
+            r="33"
+            stroke-dasharray="155.50883635269477 53.83627878423159"
+            transform="rotate(324 50 50)"
+          >
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              calcMode="linear"
+              values="0 50 50;360 50 50"
+              keyTimes="0;1"
+              dur="1s"
+              begin="0s"
+              repeatCount="indefinite"
+            ></animateTransform>
+          </circle>
+        </svg>`
+            let content = document.querySelector("#content")
+              content.append(elemDiv);
+               content.append(elemP)
+
 
             var firebaseChart = new FusionCharts({
               id: (dataType + devID) + "ID",
@@ -200,12 +284,120 @@
             });
             firebaseChart.render();
             i++;
+
+            if (sumData != 0) { //indicates there is summarised data to graph as well
+              elemDiv = document.createElement('div');
+              elemDiv.id = dataType + devID + "Summary"
+              elemDiv.className = "row"
+              content.append(elemDiv);
+              elemDiv.innerHTML = `
+                      <svg
+                  width="90px"
+                  height="90px"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="xMidYMid"
+                  class="lds-rolling row"
+                  style="background: none"
+                >
+                  <circle
+                    cx="50"
+                    cy="50"
+                    fill="none"
+                    ng-attr-stroke="{{config.color}}"
+                    ng-attr-stroke-width="{{config.width}}"
+                    ng-attr-r="{{config.radius}}"
+                    ng-attr-stroke-dasharray="{{config.dasharray}}"
+                    stroke="#6ac1a5"
+                    stroke-width="9"
+                    r="33"
+                    stroke-dasharray="155.50883635269477 53.83627878423159"
+                    transform="rotate(324 50 50)"
+                  >
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      calcMode="linear"
+                      values="0 50 50;360 50 50"
+                      keyTimes="0;1"
+                      dur="1s"
+                      begin="0s"
+                      repeatCount="indefinite"
+                    ></animateTransform>
+                  </circle>
+                </svg>`
+              var summaryChart = new FusionCharts({
+                id: (dataType + devID) + "Sum",
+                type: "line", // try: "line", "column2d", "area2d"
+                renderAt: dataType + devID + "Summary",
+                width: "750",
+                height: "400",
+                dataFormat: "json",
+                dataSource: {
+                  chart: {
+                    caption: dataType + " - " + devID + " - Summary",
+                    subCaption: "Number of Samples Taken by DreamTeam.",
+                    subCaptionFontBold: "0",
+                    captionFontSize: "20",
+                    subCaptionFontSize: "17",
+                    captionPadding: "15",
+                    captionFontColor: "#8C8C8C",
+                    baseFontSize: "14",
+                    baseFont: "Barlow",
+                    canvasBgAlpha: "0",
+                    bgColor: "#FFFFFF",
+                    bgAlpha: "100",
+                    showBorder: "0",
+                    showCanvasBorder: "0",
+                    showPlotBorder: "0",
+                    showAlternateHGridColor: "0",
+                    usePlotGradientColor: "0",
+                    paletteColors: "#6AC1A5",
+                    showValues: "0",
+                    divLineAlpha: "5",
+                    showAxisLines: "1",
+                    drawAnchors: "0",
+                    xAxisLineColor: "#8C8C8C",
+                    xAxisLineThickness: "0.7",
+                    xAxisLineAlpha: "50",
+                    yAxisLineColor: "#8C8C8C",
+                    yAxisLineThickness: "0.7",
+                    yAxisLineAlpha: "50",
+                    baseFontColor: "#8C8C8C",
+                    toolTipBgColor: "#FA8D67",
+                    toolTipPadding: "10",
+                    toolTipColor: "#FFFFFF",
+                    toolTipBorderRadius: "3",
+                    toolTipBorderAlpha: "0",
+                    drawCrossLine: "1",
+                    crossLineColor: "#8C8C8C",
+                    crossLineAlpha: "60",
+                    crossLineThickness: "0.7",
+                    alignCaptionWithCanvas: "1",
+                    xAxisName: "Time",
+                    yAxisName: y_label[dataType],
+                    numberprefix: num_prefix[dataType],
+                    labeldisplay: "rotate",
+                    //attributes use to set the yaxis limits
+                    //yAxisMinValue: "24",
+                    //yAxisMaxValue: "28",
+                  },
+                  data: sumData,
+                },
+              });
+              summaryChart.render();
+            }
           }
         }
-      }
+        }
     </script>
   </head>
 
-  <body>
+  <body class="container-fluid">
+      <div class="row">
+          <div class="col-xl-2 col-lg-1 col-md-1 col-sm-0"></div>
+          <div class="col-xl-8 col-lg-10 col-md-10 col-sm-12" id="content"></div>
+          <div class="col-xl-2 col-lg-1 col-md-1 col-sm-0"></div>
+      </div>
   </body>
 </html>
