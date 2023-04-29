@@ -263,8 +263,6 @@ while True:
                                         lockState = Message[2]
                                         #don't need to send any messages, just update state and firebase
                                         update_firebase_keypad_lock_status(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
-
-
                                 else:
                                         print("No case was triggered")
 

@@ -56,15 +56,16 @@ void loop() {
   float humi = dht.readHumidity(); //read humidity data
   float new_pot = get_pot(POTPIN); //get the current value from the potentiometer
   
-  send_data(DeviceID, "TEMP", String(temp)); //Send temperature data to coordinator
-  send_data(DeviceID, "HUMI", String(humi)); //Send humidity data to coordinator
-  
   //Check to see whether the value read from the potentiometer has changed since last loop
   if (new_pot != pot) //if value has changed since last loop, send new value
   {
     pot = new_pot;
     send_data(DeviceID, "TECO", String(pot));
   }
+  send_data(DeviceID, "TEMP", String(temp)); //Send temperature data to coordinator
+  send_data(DeviceID, "HUMI", String(humi)); //Send humidity data to coordinator
+  
+
   float sentTime = millis(); //set a timestamp from which we can identify when a specific time period has passed, at which point loop can end and data can be resent
   //continue to look for data coming in on the XBee for TBM/1000 seconds before reading in more data and sending it to the controller
   while (millis() - sentTime < TBM)
