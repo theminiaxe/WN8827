@@ -56,12 +56,7 @@ void loop() {
   float humi = dht.readHumidity(); //read humidity data
   float new_pot = get_pot(POTPIN); //get the current value from the potentiometer
   
-  //Check to see whether the value read from the potentiometer has changed since last loop
-  if (new_pot != pot) //if value has changed since last loop, send new value
-  {
-    pot = new_pot;
-    send_data(DeviceID, "TECO", String(pot));
-  }
+  send_data(DeviceID, "TECO", String(new_pot));
   send_data(DeviceID, "TEMP", String(temp)); //Send temperature data to coordinator
   send_data(DeviceID, "HUMI", String(humi)); //Send humidity data to coordinator
   
