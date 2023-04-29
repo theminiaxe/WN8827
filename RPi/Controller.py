@@ -71,7 +71,7 @@ def update_firebase_keypad_lock_status(keypad_lock_status, DevID, current_time, 
 def update_firebase_aircon_status(aircon_status, DevID, current_time, label):
         if aircon_status is not None:
                 data = {"label":current_time, "value":aircon_status}
-                results = db.child("Aircon_Status, DevID, current_time, label")
+                results = db.child("Aircon_Status").child(DevID).child(label).set(data)
         else:
                 print('Failed to get reading. Try again')
 
