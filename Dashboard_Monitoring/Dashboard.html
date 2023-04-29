@@ -42,15 +42,6 @@
       firebase.initializeApp(config);
       console.log("Firebase initialised");
       const database = firebase.database().ref();
-
-
-      // database.on("value", function(snapshot) {
-      //  snapshot.forEach(function(childSnapshot) {
-      //   var childData = childSnapshot.val();
-      //   var id=childData.id;
-      //   console.log(childData);
-      //  });
-      // });
     </script>
 
     <script>  
@@ -67,10 +58,12 @@
         Humidity: "Humi = ",
         Room_Occupancy: "Status = "
       }
-      console.log("Debug - database.on");
-      database.on('child_changed', function(snapshot){
-        getData(genFunction);
-      });
+      //console.log("Debug - database.on");
+      //database.on('child_changed', function(snapshot){
+      //  getData(genFunction);
+      //});
+
+    setInterval(function() { window.location.reload() }, 30000);
 
       console.log("Debug - adding event listener");
       window.addEventListener("load", getData(genFunction));
