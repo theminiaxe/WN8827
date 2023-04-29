@@ -112,6 +112,7 @@ int send_data(String DevID, String DevDataType, String DevData) {
     if ((DevData[i] < '0' || DevData[i] > '9') && (DevData[i] != '.')) {
       SerialPrint("DevData contains invalid characters", DEBUG);
       SerialPrint(DevData[i], DEBUG);
+      SerialPrint(DevData, DEBUG);
       return 3;
     }
   }
@@ -146,12 +147,23 @@ void process_data(String Data) {
     if (Data[7] == 'H')
     {
       SerialPrint("H - turning on", DEBUG);
-      digitalWrite(LEDPIN, HIGH);
+      digitalWrite(LEDPINRED, HIGH);
+      digitalWrite(LEDPINBLUE, LOW);
+      digitalWrite(LEDPINGREEN, LOW);
     }
-    else if (Data[7] == "L")
+    else if (Data[7] == 'L')
     {
       SerialPrint("L - turning off", DEBUG);
-      digitalWrite(LEDPIN, LOW);
+      digitalWrite(LEDPINRED, LOW);
+      digitalWrite(LEDPINBLUE, HIGH);
+      digitalWrite(LEDPINGREEN, LOW);
+    }
+    else if (Data[7] == 'G')
+    {
+      SerialPrint("G - turning off", DEBUG);
+      digitalWrite(LEDPINRED, LOW);
+      digitalWrite(LEDPINBLUE, LOW);
+      digitalWrite(LEDPINGREEN, HIGH);      
     }
   }
   else if (Data.substring(3,7) == "ROOM")

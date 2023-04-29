@@ -1,12 +1,32 @@
 #include <SoftwareSerial.h>
 #include <Keypad.h>
+#include "DHT.h"
+
+//define a time between messages in milliseconds
+#define TBM 30000
+//string to be used as a unique identifier for messages to/from this device
+String DeviceID = "D03";
+//Define a flag to be used to indicate whether code is being debugged this will be used largely to determine whether or not to print data to serial
+#define DEBUG 1
+
+//these need to be changed depending on the shield being used 
 //SoftwareSerial XBee(1,0); // RX, TX
 SoftwareSerial XBee(2,3); // RX, TX
 
-#include "DHT.h"
-
+//Configure DHT sensor
 #define DHTPIN 4
 #define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
+
+//pins used to simulate the output of an airconditioner - not necessarily used in every sketch but required for compilation due to implementation of function file, not ideal but will do in this instance
+#define LEDPINRED 16 //current temp is lower than desired - heating
+#define LEDPINGREEN 17 //airconditioner is off, desired temp reached or house locked
+#define LEDPINBLUE 18 //current temp is higher than desired - cooling
+//pins used to simulate control of an airconditioner
+#define POTPIN 14 //reads from potentiometer to mimic a temperature controlled dial with values mapped from 15 - 35
+float pot = 0; //float used to store ongoing value from potentiometer outside of each loop
+//pin used to simulate a light in a room
+#define ROOMLEDPIN 15
 
 #define ROW_NUM 4 //four rows
 #define COLUMN_NUM 4 //four columns
@@ -29,18 +49,6 @@ String LockPin = "1234";
 String UnlockPin = "4321";
 String input = "";
 
-#define LEDPIN 16
-#define ROOMLEDPIN 15
-#define POTPIN 14
-//Define a flag to be used to indicate whether code is being debugged
-//this will be used largely to determine whether or not to print data
-//to serial
-#define DEBUG 1
-
-String DeviceID = "D03";
-
-float pot = 0;
-
 int send_data(String DevID, String DevDataType, String DevData);
 int receive_data(String MessageToConfirm="NONE");
 float get_pot(int analogPin);
@@ -51,20 +59,15 @@ void SerialPrint(int toPrint, int Debug);
 void SerialPrint(unsigned int toPrint, int Debug);
 void SerialPrint(float toPrint, int Debug);
 
-DHT dht(DHTPIN, DHTTYPE);
-
 void setup(){
   XBee.begin(9600);
   if (DEBUG) {
     Serial.begin(9600);
   }
-  pinMode(LEDPIN, OUTPUT);
-  dht.begin();
 }
 
 void loop(){
   char key = keypad.getKey();
-
   if (key){
     if (key != 'C') {
       input += key;
