@@ -50,7 +50,6 @@ void loop() {
   avgSensorValue = totalSensorValues / totalReadings;
   
   send_data(DeviceID, "LIGH", String(avgSensorValue)); //send the value of light read to the coordinator
-  send_data(DeviceID, "TEMP", "22.0"); //mimic sending temperature as a second device - don't have another thermistor so will just send const value
 
   int pirVal = digitalRead(PIRPIN); //read from the PIR sensor, 1 indicates motion, 0 indicates no motion
   send_data(DeviceID, "ROOM", String(pirVal)); //send the value from the PIIR sensor to the coordinator

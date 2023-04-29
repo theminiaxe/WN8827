@@ -205,14 +205,13 @@ while True:
                                         print("Temperature case triggered")
                                         SampleCounts[Message[1]] += 1
                                         update_firebase_temperature(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
+                                        aircon_state = "G"
                                         if float(Message[2]) < (desiredTemp -2)  and lockState == "0": #Indicates the house is unlocked, and temp needs to cool down
-                                                ser.write((Message[0]+Message[1]+"H").encode())
-                                                print((Message[0]+Message[1]+"H"))
+                                                aircon_state = "H"
                                         elif float(Message[2]) > (desiredTemp + 2) and lockState == "0":
-                                                print(ser.write((Message[0]+Message[1]+"L").encode()))
-                                        else:
-                                                ser.write((Message[0]+Message[1]+"G").encode())
-
+                                                aircon_state = "L"
+                                        ser.write((Message[0]+Message[1]+aircon_state).encode())
+                                        update_firebase_aircon_status(aircon_state, Message[0], current_time_string, SampleCounts[Message[1]])
                                 elif Message[1] == "HUMI":
                                         SampleCounts[Message[1]] += 1
                                         update_firebase_humidity(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
