@@ -40,9 +40,9 @@ void setup() {
 
 // the loop routine runs over and over again forever:
 void loop() {
-  int totalSensorValues = 0; //store total of values read from photoresistor - used to calculate average
-  int totalReadings = 100; //total readings to take from photoresistor before calculating average
-  int avgSensorValue; //store the average sensor value and use that as our 'reading' of light
+  float totalSensorValues = 0; //store total of values read from photoresistor - used to calculate average
+  float totalReadings = 100; //total readings to take from photoresistor before calculating average
+  float avgSensorValue; //store the average sensor value and use that as our 'reading' of light
   for (int i = 0; i < totalReadings; i++) { //add totalReadings number of values from photoresistor with 1ms delay in between each reading
     totalSensorValues += analogRead(PHOTOPIN);
     delay(1);  // delay in between reads for stability

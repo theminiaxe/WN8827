@@ -172,7 +172,8 @@ MessageCache = {}
 desiredTemp = 20
 roomState = "0" #Default is empty - room unoccupied
 lockState = "0" #Default is unlocked - i.e. people in the house
-
+motionWarningState = False
+need_light = True
 # Continuously read and print data
 while True:
         try:
@@ -215,8 +216,10 @@ while True:
                                         update_firebase_light(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
                                         if float(Message[2]) > 100: #indicates that there is enough light outside, and that the artificial light doesn't need to be turned on
                                                 need_light = False
+                                                print("Don't need light")
                                         else:
                                                 need_light = True
+                                                print("Need Light")
                                 elif Message[1] == "TECO":
                                         print("Temperature control case triggered")
                                         update_firebase_temperature_control(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
@@ -227,19 +230,23 @@ while True:
                                         #double check to see if state has actually changed
                                         roomState = Message[2]
                                         if lockState == "0": #House unlocked, we expect people - turn on light
-                                                if roomState == "0":#Room unoccupied turn off led to mimic turning off light
+                                                motionWarningState = False
+                                                if roomState == "0" or need_light == False:#Room unoccupied turn off led to mimic turning off light
                                                         ser.write(("D01ROOM0").encode())
                                                 elif roomState == "1" and need_light: #Turn on the led to mimic a light
                                                         ser.write(("D01ROOM1").encode())
                                         elif lockState == "1": #House locked - motion detected but we don't necessarily want to turn light on
                                                 if roomState == "1":
-                                                        print("Motion detected but house locked - doing nothing - notification will be sent and nothing further will be done") #Might like to look into sending push notifications to phone here
-                                                        #alert_message =twilioclient.messages.create(
-                                                        #        body="Alert! There is movement!",
-                                                        #        from_="+16205089817", # Your trial phone number
-                                                        #        to="+61415709665" #Your mobile phone number
-                                                        #)
-                                                        #print(alert_message.sid)
+                                                        print("Motion detected but house locked - doing nothing - notification will be sent on first occurence, after which nothing will be done") #Might like to look into sending push notifications to phone here
+                                                        if motionWarningState == False:
+                                                                print("Message sent")
+                                                                motionWarningState = True
+	                                                        #alert_message =twilioclient.messages.create(
+	                                                        #        body="Alert! There is movement!",
+	                                                        #        from_="+16205089817", # Your trial phone number
+	                                                        #        to="+61415709665" #Your mobile phone number
+	                                                        #)
+	                                                        #print(alert_message.sid)
                                         SampleCounts[Message[1]] += 1
                                         update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
                                 elif Message[1] == "KEYP":
