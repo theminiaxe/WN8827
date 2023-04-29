@@ -68,6 +68,13 @@ def update_firebase_keypad_lock_status(keypad_lock_status, DevID, current_time, 
         else:
                 print('Failed to get reading. Try Again!')
 
+def update_firebase_aircon_status(aircon_status, DevID, current_time, label):
+        if aircon_status is not None:
+                data = {"label":current_time, "value":aircon_status}
+                results = db.child("Aircon_Status, DevID, current_time, label")
+        else:
+                print('Failed to get reading. Try again')
+
 # PSEUDOCODE
 #  -  Read input from XBEE using the pyserial library, one byte at a time to enable easier input validation
 #  -  validate the input based on the expected sensors and format of messages being received
