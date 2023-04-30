@@ -58,7 +58,7 @@ void loop() {
 
   float sentTime = millis(); //set a timestamp from which we can identify when a specific time period has passed, at which point loop can end and data can be resent
   //continue to look for data coming in on the XBee for TBM/1000 seconds before reading in more data and sending it to the controller
-  while (millis() - sentTime < 10000)
+  while (millis() - sentTime < TBM)
   {
     receive_data("NONE");
   }
