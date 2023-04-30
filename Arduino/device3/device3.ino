@@ -27,6 +27,7 @@ DHT dht(DHTPIN, DHTTYPE);
 float pot = 0; //float used to store ongoing value from potentiometer outside of each loop
 //pin used to simulate a light in a room
 #define ROOMLEDPIN 15
+#define BUZZERPIN 19
 
 #define ROW_NUM 4 //four rows
 #define COLUMN_NUM 4 //four columns
@@ -65,6 +66,7 @@ void setup(){
   if (DEBUG) {
     Serial.begin(9600);
   }
+  pinMode(BUZZERPIN, OUTPUT);
 }
 
 void loop(){
@@ -85,6 +87,7 @@ void loop(){
           XBee.readString();
           send_data(DeviceID, "KEYP", String("0"));
           locked = 0;
+          noTone(BUZZERPIN);
           delay(1000);
         }
         else {

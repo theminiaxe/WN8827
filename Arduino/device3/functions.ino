@@ -179,6 +179,10 @@ void process_data(String Data) {
       SerialPrint("Room not occupied - turning LED off", DEBUG);
       digitalWrite(ROOMLEDPIN, LOW);
     }
+  }
+  else if (Data.substring(3,7) == "ALAR") { //turn on buzzer
+    tone(BUZZERPIN, 2000);
+    locked = 0; //alarm won't turn off until unlock pin is entered
   }  
   else
   {

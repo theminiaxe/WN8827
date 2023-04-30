@@ -26,6 +26,8 @@ DHT dht(DHTPIN, DHTTYPE);
 float pot = 0; //float used to store ongoing value from potentiometer outside of each loop
 //pin used to simulate a light in a room
 #define ROOMLEDPIN 15
+#define BUZZERPIN 19
+int locked = 0;
 
 int send_data(String DevID, String DevDataType, String DevData);
 int receive_data(String MessageToConfirm="NONE");

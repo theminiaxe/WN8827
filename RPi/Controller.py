@@ -256,6 +256,7 @@ while True:
 	                                                        #        to="+61415709665" #Your mobile phone number
 	                                                        #)
 	                                                        #print(alert_message.sid)
+                                                        ser.write(("D03ALAR1").encode())
                                         SampleCounts[Message[1]] += 1
                                         update_firebase_room_occupancy(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])
                                 elif Message[1] == "KEYP":
