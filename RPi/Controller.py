@@ -208,10 +208,13 @@ while True:
                                         aircon_state = "G"
                                         if float(Message[2]) < (desiredTemp -2)  and lockState == "0": #Indicates the house is unlocked, and temp needs to cool down
                                                 aircon_state = "H"
+                                                update_firebase_aircon_status("1", Message[0], current_time_string, SampleCounts[Message[1]])
                                         elif float(Message[2]) > (desiredTemp + 2) and lockState == "0":
                                                 aircon_state = "L"
+                                                update_firebase_aircon_status("-1", Message[0], current_time_string, SampleCounts[Message[1]])
+                                        else:
+                                                update_firebase_aircon_status("0", Message[0], current_time_string, SampleCounts[Message[1]])
                                         ser.write((Message[0]+Message[1]+aircon_state).encode())
-                                        update_firebase_aircon_status(aircon_state, Message[0], current_time_string, SampleCounts[Message[1]])
                                 elif Message[1] == "HUMI":
                                         SampleCounts[Message[1]] += 1
                                         update_firebase_humidity(Message[2], Message[0], current_time_string, SampleCounts[Message[1]])

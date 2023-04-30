@@ -48,6 +48,7 @@ Keypad keypad = Keypad( makeKeymap(keys), pin_rows, pin_column, ROW_NUM, COLUMN_
 String LockPin = "1234";
 String UnlockPin = "4321";
 String input = "";
+int locked = 0;
 
 int send_data(String DevID, String DevDataType, String DevData);
 int receive_data(String MessageToConfirm="NONE");
@@ -76,17 +77,19 @@ void loop(){
           Serial.println("Locking");
           XBee.readString();
           send_data(DeviceID, "KEYP", String("1"));
-          delay(10000);
+          locked = 1;
+          delay(1000);
         }
         else if (input == UnlockPin) {
           Serial.println("Unlocking");
           XBee.readString();
           send_data(DeviceID, "KEYP", String("0"));
-          delay(10000);
+          locked = 0;
+          delay(1000);
         }
         else {
           Serial.println("Invalid Pin");
-          delay(10000);
+          delay(1000);
         }
         input = "";
       }
@@ -94,5 +97,8 @@ void loop(){
     else {
       input = "";
     }
+  }
+  if (locked) {
+    receive_data();
   }
 }

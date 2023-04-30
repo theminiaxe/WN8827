@@ -49,14 +49,40 @@
         Temperature: "Temperature (C)",
         Light: "Light",
         Humidity: "Humidity (%)",
-        Room_Occupancy: "Room Occupied"
+        Room_Occupancy: "Room Occupied (1/Yes - 0/No)",
+        Aircon_Status: "Aircon (1/Heating - 0/Off - -1/Cooling"
       } 
 
       var num_prefix = {
         Temperature: "Temp = ",
         Light: "Light = ",
         Humidity: "Humi = ",
-        Room_Occupancy: "Status = "
+        Room_Occupancy: "Status = ",
+        Aircon_Status: "Status = "
+      }
+
+      var y_min = {
+        Temperature: "15",
+        Light: "0",
+        Humidity: "0",
+        Room_Occupancy: "0",
+        Aircon_Status: "-1"
+      }
+
+      var y_max = {
+        Temperature: "35",
+        Light: "1024",
+        Humidity: "100",
+        Room_Occupancy: "1",
+        Aircon_Status: "1"
+      }
+
+      var generate_usage_statistics = {
+        Temperature: false,
+        Light: false,
+        Humidity: false,
+        Room_Occupancy: true,
+        Aircon_Status: true
       }
       //console.log("Debug - database.on");
       //database.on('child_changed', function(snapshot){
@@ -121,12 +147,12 @@
                         console.log(prevTime);
                     }
                     //sample to generate statistics for usage
-                    if (dataType == "Room_Occupancy") {
-                        console.log("Room");
-                        console.log(state);
+                    if (generate_usage_statistics[dataType]) {
+                        //console.log("Room");
+                        //console.log(state);
                         if (state != prevState) {
-                            console.log("State changed");
-                            console.log(state == 0);
+                            //console.log("State changed");
+                            //console.log(state == 0);
                             if (state == 0) {//light on
                                 console.log("State change detected");
                                 totalTime = totalTime + time - prevTime;
@@ -137,14 +163,14 @@
                         }
                         //generate a usage graph indicating summation of on time
                         //indicates on or has been on, and time needs to be added to graph
-                        if (prevState == 1 || state == 1) {
+                        if (prevState == 1 || state == 1 || prevState == -1 || state == -1) {
                           if (lastTime == 0)
                           {
                             lastTime = time;
                           }
                           totalTimeGranular = totalTimeGranular + time - lastTime;
                           
-                          console.log("lastTime " + lastTime)
+                          //console.log("lastTime " + lastTime)
                         }
                         sumData.push({
                             label: data[dataType][devID][sample]["label"],
@@ -269,8 +295,8 @@
                   numberprefix: num_prefix[dataType],
                   labeldisplay: "rotate",
                   //attributes use to set the yaxis limits
-                  yAxisMinValue: "24",
-                  yAxisMaxValue: "28",
+                  yAxisMinValue: y_min[dataType],
+                  yAxisMaxValue: y_max[dataType],
                 },
                 data: chartData,
               },
