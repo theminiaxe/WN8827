@@ -3,4 +3,14 @@
 div {
     padding-top: 10px;
     background-color: #ece8f3;
+    color: #444444;
+}
+
+p{
+    font-weight: bold;
+}
+
+ul{
+    list-style-type: none;
+    font-weight: normal;
 }
